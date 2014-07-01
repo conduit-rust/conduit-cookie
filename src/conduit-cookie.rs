@@ -12,8 +12,7 @@ use cookie::{CookieJar, Cookie};
 pub struct Middleware;
 
 impl conduit_middleware::Middleware for Middleware {
-    fn before<'a>(&self,
-                  req: &'a mut Request) -> Result<&'a mut Request, Box<Show>> {
+    fn before(&self, req: &mut Request) -> Result<(), Box<Show>> {
         let jar = {
             let headers = req.headers();
             let mut jar = CookieJar::new();
@@ -31,12 +30,13 @@ impl conduit_middleware::Middleware for Middleware {
             jar
         };
         req.mut_extensions().insert("conduit.cookie", box jar);
-        Ok(req)
+        Ok(())
     }
 
-    fn after<'a>(&self,
-                 req: &mut Request,
-                 res: &'a mut Response) -> Result<&'a mut Response, Box<Show>> {
+    fn after(&self, req: &mut Request, res: Result<Response, Box<Show>>)
+        -> Result<Response, Box<Show>>
+    {
+        let mut res = try!(res);
         {
             let jar = req.cookies();
             let cookies = res.headers.find_or_insert("Set-Cookie".to_string(),
