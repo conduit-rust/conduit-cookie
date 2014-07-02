@@ -3,13 +3,27 @@
 extern crate conduit;
 extern crate conduit_middleware = "conduit-middleware";
 extern crate cookie;
+extern crate serialize;
+#[cfg(test)] extern crate test = "conduit-test";
 
 use std::fmt::Show;
 use std::any::AnyMutRefExt;
 use conduit::{Request, Response};
 use cookie::{CookieJar, Cookie};
 
-pub struct Middleware;
+pub use session::{RequestSession, SessionMiddleware};
+
+mod session;
+
+pub struct Middleware {
+    _priv: ()
+}
+
+impl Middleware {
+    pub fn new() -> Middleware {
+        Middleware { _priv: () }
+    }
+}
 
 impl conduit_middleware::Middleware for Middleware {
     fn before(&self, req: &mut Request) -> Result<(), Box<Show>> {
@@ -50,11 +64,11 @@ impl conduit_middleware::Middleware for Middleware {
 }
 
 pub trait RequestCookies<'a> {
-    fn cookies(self) -> &'a mut cookie::CookieJar;
+    fn cookies(self) -> &'a mut CookieJar;
 }
 
 impl<'a> RequestCookies<'a> for &'a mut Request {
-    fn cookies(self) -> &'a mut cookie::CookieJar{
+    fn cookies(self) -> &'a mut CookieJar {
         self.mut_extensions().find_mut(&"conduit.cookie")
             .and_then(|a| a.as_mut::<CookieJar>())
             .expect("Missing cookie jar")
@@ -63,12 +77,11 @@ impl<'a> RequestCookies<'a> for &'a mut Request {
 
 #[cfg(test)]
 mod tests {
-    extern crate test = "conduit-test";
 
     use conduit::{Request, Response, Handler, Post};
     use conduit_middleware::MiddlewareBuilder;
     use cookie::Cookie;
-    use self::test::MockRequest;
+    use test::MockRequest;
     use std::collections::HashMap;
     use std::io::MemReader;
 
@@ -80,7 +93,7 @@ mod tests {
         req.header("Cookie", "foo=bar");
 
         let mut app = MiddlewareBuilder::new(test);
-        app.add(Middleware);
+        app.add(Middleware::new());
         assert!(app.call(&mut req).is_ok());
 
         fn test(req: &mut Request) -> Result<Response, String> {
@@ -97,7 +110,7 @@ mod tests {
     fn set_cookie() {
         let mut req = MockRequest::new(Post, "/articles");
         let mut app = MiddlewareBuilder::new(test);
-        app.add(Middleware);
+        app.add(Middleware::new());
         let response = app.call(&mut req).ok().unwrap();
         let v = response.headers.get(&"Set-Cookie".to_string());
         assert_eq!(v.as_slice(), &["foo=bar".to_string()]);
