@@ -21,7 +21,6 @@ impl SessionMiddleware {
 
     pub fn decode(&self, cookie: &Cookie) -> HashMap<String, String> {
         let mut ret = HashMap::new();
-        println!("decoding: {}", cookie.value);
         let bytes = cookie.value.as_slice().from_base64().unwrap_or(Vec::new());
         let mut parts = bytes.as_slice().split(|&a| a == 0xff);
         loop {
