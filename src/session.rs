@@ -19,7 +19,7 @@ impl SessionMiddleware {
         SessionMiddleware { cookie_name: cookie.to_string() }
     }
 
-    pub fn decode(&self, cookie: &Cookie) -> HashMap<String, String> {
+    pub fn decode(&self, cookie: Cookie) -> HashMap<String, String> {
         let mut ret = HashMap::new();
         let bytes = cookie.value.as_slice().from_base64().unwrap_or(Vec::new());
         let mut parts = bytes.as_slice().split(|&a| a == 0xff);
@@ -104,7 +104,7 @@ mod test {
 
         // Set the session cookie
         let mut app = MiddlewareBuilder::new(set_session);
-        app.add(Middleware::new());
+        app.add(Middleware::new(b"foo"));
         app.add(SessionMiddleware::new("lol"));
         let response = app.call(&mut req).ok().unwrap();
 
@@ -114,7 +114,7 @@ mod test {
         // Use the session cookie
         req.header("Cookie", v.as_slice()[0].as_slice());
         let mut app = MiddlewareBuilder::new(use_session);
-        app.add(Middleware::new());
+        app.add(Middleware::new(b"foo"));
         app.add(SessionMiddleware::new("lol"));
         assert!(app.call(&mut req).is_ok());
 

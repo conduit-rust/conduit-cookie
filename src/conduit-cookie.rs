@@ -16,12 +16,12 @@ pub use session::{RequestSession, SessionMiddleware};
 mod session;
 
 pub struct Middleware {
-    _priv: ()
+    key: Vec<u8>,
 }
 
 impl Middleware {
-    pub fn new() -> Middleware {
-        Middleware { _priv: () }
+    pub fn new(key: &[u8]) -> Middleware {
+        Middleware { key: key.to_owned() }
     }
 }
 
@@ -29,7 +29,7 @@ impl conduit_middleware::Middleware for Middleware {
     fn before(&self, req: &mut Request) -> Result<(), Box<Show>> {
         let jar = {
             let headers = req.headers();
-            let mut jar = CookieJar::new();
+            let mut jar = CookieJar::new(self.key.as_slice());
             match headers.find("Cookie") {
                 Some(cookies) => {
                     for cookie in cookies.iter() {
@@ -64,13 +64,13 @@ impl conduit_middleware::Middleware for Middleware {
 }
 
 pub trait RequestCookies<'a> {
-    fn cookies(self) -> &'a mut CookieJar;
+    fn cookies(self) -> &'a mut CookieJar<'static>;
 }
 
 impl<'a> RequestCookies<'a> for &'a mut Request {
-    fn cookies(self) -> &'a mut CookieJar {
+    fn cookies(self) -> &'a mut CookieJar<'static> {
         self.mut_extensions().find_mut(&"conduit.cookie")
-            .and_then(|a| a.as_mut::<CookieJar>())
+            .and_then(|a| a.as_mut::<CookieJar<'static>>())
             .expect("Missing cookie jar")
     }
 }
@@ -93,7 +93,7 @@ mod tests {
         req.header("Cookie", "foo=bar");
 
         let mut app = MiddlewareBuilder::new(test);
-        app.add(Middleware::new());
+        app.add(Middleware::new(b"foo"));
         assert!(app.call(&mut req).is_ok());
 
         fn test(req: &mut Request) -> Result<Response, String> {
@@ -110,10 +110,10 @@ mod tests {
     fn set_cookie() {
         let mut req = MockRequest::new(Post, "/articles");
         let mut app = MiddlewareBuilder::new(test);
-        app.add(Middleware::new());
+        app.add(Middleware::new(b"foo"));
         let response = app.call(&mut req).ok().unwrap();
         let v = response.headers.get(&"Set-Cookie".to_string());
-        assert_eq!(v.as_slice(), &["foo=bar".to_string()]);
+        assert_eq!(v.as_slice(), &["foo=bar; Path=/".to_string()]);
 
         fn test(req: &mut Request) -> Result<Response, String> {
             let c = Cookie::new("foo".to_string(), "bar".to_string());
