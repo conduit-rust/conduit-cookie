@@ -54,7 +54,7 @@ impl SessionMiddleware {
 impl conduit_middleware::Middleware for SessionMiddleware {
     fn before(&self, req: &mut Request) -> Result<(), Box<Show>> {
         let session = {
-            let jar = req.cookies();
+            let jar = req.cookies().signed();
             jar.find(self.cookie_name.as_slice()).map(|cookie| {
                 self.decode(cookie)
             }).unwrap_or_else(|| HashMap::new())
@@ -70,7 +70,8 @@ impl conduit_middleware::Middleware for SessionMiddleware {
         let session = session.expect("session must be present after request");
         let session = session.as_ref::<HashMap<String, String>>().unwrap();
         let encoded = self.encode(session);
-        req.cookies().add(Cookie::new(self.cookie_name.to_string(), encoded));
+        let cookie = Cookie::new(self.cookie_name.to_string(), encoded);
+        req.cookies().signed().add(cookie);
         return res;
     }
 }
