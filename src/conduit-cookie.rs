@@ -7,7 +7,7 @@ extern crate serialize;
 #[cfg(test)] extern crate test = "conduit-test";
 
 use std::fmt::Show;
-use std::any::AnyMutRefExt;
+use std::any::AnyRefExt;
 use conduit::{Request, Response};
 use cookie::{CookieJar, Cookie};
 
@@ -64,13 +64,13 @@ impl conduit_middleware::Middleware for Middleware {
 }
 
 pub trait RequestCookies<'a> {
-    fn cookies(self) -> &'a mut CookieJar<'static>;
+    fn cookies(self) -> &'a CookieJar<'static>;
 }
 
 impl<'a> RequestCookies<'a> for &'a mut Request {
-    fn cookies(self) -> &'a mut CookieJar<'static> {
+    fn cookies(self) -> &'a CookieJar<'static> {
         self.mut_extensions().find_mut(&"conduit.cookie")
-            .and_then(|a| a.as_mut::<CookieJar<'static>>())
+            .and_then(|a| a.as_ref::<CookieJar<'static>>())
             .expect("Missing cookie jar")
     }
 }
