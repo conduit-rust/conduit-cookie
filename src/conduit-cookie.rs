@@ -21,7 +21,7 @@ pub struct Middleware {
 
 impl Middleware {
     pub fn new(key: &[u8]) -> Middleware {
-        Middleware { key: key.to_owned() }
+        Middleware { key: key.to_vec() }
     }
 }
 
