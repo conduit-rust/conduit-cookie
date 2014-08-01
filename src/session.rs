@@ -68,7 +68,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
     {
         let session = req.mut_extensions().pop(&"conduit.cookie.session");
         let session = session.expect("session must be present after request");
-        let session = session.as_ref::<HashMap<String, String>>().unwrap();
+        let session = session.downcast_ref::<HashMap<String, String>>().unwrap();
         let encoded = self.encode(session);
         let cookie = Cookie::new(self.cookie_name.to_string(), encoded);
         req.cookies().signed().add(cookie);
@@ -83,7 +83,7 @@ pub trait RequestSession<'a> {
 impl<'a> RequestSession<'a> for &'a mut Request {
     fn session(self) -> &'a mut HashMap<String, String> {
         self.mut_extensions().find_mut(&"conduit.cookie.session")
-            .and_then(|a| a.as_mut::<HashMap<String, String>>())
+            .and_then(|a| a.downcast_mut::<HashMap<String, String>>())
             .expect("missing cookie session")
     }
 }

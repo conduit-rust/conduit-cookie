@@ -70,7 +70,7 @@ pub trait RequestCookies<'a> {
 impl<'a> RequestCookies<'a> for &'a mut Request {
     fn cookies(self) -> &'a CookieJar<'static> {
         self.mut_extensions().find_mut(&"conduit.cookie")
-            .and_then(|a| a.as_ref::<CookieJar<'static>>())
+            .and_then(|a| a.downcast_ref::<CookieJar<'static>>())
             .expect("Missing cookie jar")
     }
 }
