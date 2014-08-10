@@ -5,17 +5,13 @@ authors = ["Alex Crichton <alex@alexcrichton.com>"]
 version = "0.0.1"
 
 [dependencies.cookie]
-
 git = "https://github.com/alexcrichton/cookie-rs.git"
 
 [dependencies.conduit]
-
 git = "https://github.com/conduit-rust/conduit.git"
 
 [dependencies.conduit-middleware]
-
 git = "https://github.com/conduit-rust/conduit-middleware.git"
 
-[dependencies.conduit-test]
-
+[dev-dependencies.conduit-test]
 git = "https://github.com/conduit-rust/conduit-test.git"
