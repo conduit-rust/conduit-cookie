@@ -109,8 +109,8 @@ mod test {
         app.add(SessionMiddleware::new("lol"));
         let response = app.call(&mut req).ok().unwrap();
 
-        let v = response.headers.get(&"Set-Cookie".to_string());
-        assert!(v.as_slice()[0].as_slice().starts_with("lol"));
+        let v = response.headers["Set-Cookie".to_string()].as_slice();
+        assert!(v[0].as_slice().starts_with("lol"));
 
         // Use the session cookie
         req.header("Cookie", v.as_slice()[0].as_slice());
