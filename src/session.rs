@@ -1,4 +1,3 @@
-use std::any::{AnyRefExt, AnyMutRefExt};
 use std::collections::HashMap;
 use std::fmt::Show;
 use std::str;
@@ -12,6 +11,10 @@ use super::RequestCookies;
 
 pub struct SessionMiddleware {
     cookie_name: String,
+}
+
+pub struct Session {
+    pub data: HashMap<String, String>,
 }
 
 impl SessionMiddleware {
@@ -59,18 +62,19 @@ impl conduit_middleware::Middleware for SessionMiddleware {
                 self.decode(cookie)
             }).unwrap_or_else(|| HashMap::new())
         };
-        req.mut_extensions().insert("conduit.cookie.session", box session);
+        req.mut_extensions().insert(Session { data: session });
         Ok(())
     }
 
     fn after(&self, req: &mut Request, res: Result<Response, Box<Show>>)
         -> Result<Response, Box<Show>>
     {
-        let session = req.mut_extensions().pop(&"conduit.cookie.session");
-        let session = session.expect("session must be present after request");
-        let session = session.downcast_ref::<HashMap<String, String>>().unwrap();
-        let encoded = self.encode(session);
-        let cookie = Cookie::new(self.cookie_name.to_string(), encoded);
+        let cookie = {
+            let session = req.mut_extensions().find::<Session>();
+            let session = session.expect("session must be present after request");
+            let encoded = self.encode(&session.data);
+            Cookie::new(self.cookie_name.to_string(), encoded)
+        };
         req.cookies().signed().add(cookie);
         return res;
     }
@@ -82,9 +86,8 @@ pub trait RequestSession<'a> {
 
 impl<'a> RequestSession<'a> for &'a mut Request {
     fn session(self) -> &'a mut HashMap<String, String> {
-        self.mut_extensions().find_mut(&"conduit.cookie.session")
-            .and_then(|a| a.downcast_mut::<HashMap<String, String>>())
-            .expect("missing cookie session")
+        &mut self.mut_extensions().find_mut::<Session>()
+                 .expect("missing cookie session").data
     }
 }
 
