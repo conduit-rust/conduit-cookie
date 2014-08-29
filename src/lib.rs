@@ -25,7 +25,7 @@ impl Middleware {
 }
 
 impl conduit_middleware::Middleware for Middleware {
-    fn before(&self, req: &mut Request) -> Result<(), Box<Show>> {
+    fn before(&self, req: &mut Request) -> Result<(), Box<Show + 'static>> {
         let jar = {
             let headers = req.headers();
             let mut jar = CookieJar::new(self.key.as_slice());
@@ -46,8 +46,8 @@ impl conduit_middleware::Middleware for Middleware {
         Ok(())
     }
 
-    fn after(&self, req: &mut Request, res: Result<Response, Box<Show>>)
-        -> Result<Response, Box<Show>>
+    fn after(&self, req: &mut Request, res: Result<Response, Box<Show + 'static>>)
+        -> Result<Response, Box<Show + 'static>>
     {
         let mut res = try!(res);
         {
@@ -66,7 +66,7 @@ pub trait RequestCookies<'a> {
     fn cookies(self) -> &'a CookieJar<'static>;
 }
 
-impl<'a> RequestCookies<'a> for &'a Request {
+impl<'a> RequestCookies<'a> for &'a Request + 'a {
     fn cookies(self) -> &'a CookieJar<'static> {
         self.extensions().find::<CookieJar<'static>>()
             .expect("Missing cookie jar")
@@ -111,7 +111,7 @@ mod tests {
         app.add(Middleware::new(b"foo"));
         let response = app.call(&mut req).ok().unwrap();
         let v = response.headers["Set-Cookie".to_string()].as_slice();
-        assert_eq!(v, &["foo=bar; Path=/".to_string()]);
+        assert_eq!(v, ["foo=bar; Path=/".to_string()].as_slice());
 
         fn test(req: &mut Request) -> Result<Response, String> {
             let c = Cookie::new("foo".to_string(), "bar".to_string());

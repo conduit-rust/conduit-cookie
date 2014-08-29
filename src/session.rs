@@ -55,7 +55,7 @@ impl SessionMiddleware {
 }
 
 impl conduit_middleware::Middleware for SessionMiddleware {
-    fn before(&self, req: &mut Request) -> Result<(), Box<Show>> {
+    fn before(&self, req: &mut Request) -> Result<(), Box<Show + 'static>> {
         let session = {
             let jar = req.cookies().signed();
             jar.find(self.cookie_name.as_slice()).map(|cookie| {
@@ -66,8 +66,8 @@ impl conduit_middleware::Middleware for SessionMiddleware {
         Ok(())
     }
 
-    fn after(&self, req: &mut Request, res: Result<Response, Box<Show>>)
-        -> Result<Response, Box<Show>>
+    fn after(&self, req: &mut Request, res: Result<Response, Box<Show + 'static>>)
+        -> Result<Response, Box<Show + 'static>>
     {
         let cookie = {
             let session = req.mut_extensions().find::<Session>();
@@ -84,7 +84,7 @@ pub trait RequestSession<'a> {
     fn session(self) -> &'a mut HashMap<String, String>;
 }
 
-impl<'a> RequestSession<'a> for &'a mut Request {
+impl<'a> RequestSession<'a> for &'a mut Request + 'a {
     fn session(self) -> &'a mut HashMap<String, String> {
         &mut self.mut_extensions().find_mut::<Session>()
                  .expect("missing cookie session").data
