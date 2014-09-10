@@ -1,10 +1,10 @@
 #![feature(macro_rules, globs)]
 
 extern crate conduit;
-extern crate conduit_middleware = "conduit-middleware";
+extern crate "conduit-middleware" as conduit_middleware;
 extern crate cookie;
 extern crate serialize;
-#[cfg(test)] extern crate test = "conduit-test";
+#[cfg(test)] extern crate "conduit-test" as test;
 
 use std::fmt::Show;
 use conduit::{Request, Response};
