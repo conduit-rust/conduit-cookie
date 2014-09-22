@@ -54,7 +54,7 @@ impl conduit_middleware::Middleware for Middleware {
             let jar = req.cookies();
             let cookies = res.headers.find_or_insert("Set-Cookie".to_string(),
                                                      Vec::new());
-            for delta in jar.delta().move_iter() {
+            for delta in jar.delta().into_iter() {
                 cookies.push(delta);
             }
         }
