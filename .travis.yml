@@ -10,4 +10,4 @@ after_success: ! '[ $TRAVIS_BRANCH = master ] && [ $TRAVIS_PULL_REQUEST = false 
   gh-pages '
 env:
   global:
-  - secure: MfyWyViyqw8kU5AwCWprXpiMK5Gq+aqVQuYRwe016kOPqEJpfnb+ILJ4T59/Le9DUVEpMn1HIJ6FX8P7XKAcG4EMZNBWNAubRzYByaM3/iqOWJfhBPLQgAg6SMZSfAdiN1cX8IGbVKdLyso5GEKFDD3lfaRZxtyO+CKAWbW6zZc=
+    - secure: U7/rTVMeseMoKDlW5J5fpmkMKnbhAzG/PqgG4NtRiiHoo6e1/YTVIamp+Puiek+Dd0wEtEJQQCJQtf+611/lXcv5+U/CKMF1592r8GIUE7LX5tUmj1QE/uIXS37nLc0QrF2n+Vy2g3/4Pj2NkwnhJhKMIHyXFjOYg8M33NvtYQs=
