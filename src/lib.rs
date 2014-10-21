@@ -7,6 +7,7 @@ extern crate serialize;
 #[cfg(test)] extern crate "conduit-test" as test;
 
 use std::fmt::Show;
+use std::collections::hashmap::{Occupied, Vacant};
 use conduit::{Request, Response};
 use cookie::{CookieJar, Cookie};
 
@@ -52,8 +53,10 @@ impl conduit_middleware::Middleware for Middleware {
         let mut res = try!(res);
         {
             let jar = req.cookies();
-            let cookies = res.headers.find_or_insert("Set-Cookie".to_string(),
-                                                     Vec::new());
+            let cookies = match res.headers.entry("Set-Cookie".to_string()) {
+                Occupied(e) => e.into_mut(),
+                Vacant(e) => e.set(Vec::new()),
+            };
             for delta in jar.delta().into_iter() {
                 cookies.push(delta);
             }
