@@ -131,7 +131,7 @@ mod test {
             })
         }
         fn use_session(req: &mut Request) -> Result<Response, String> {
-            assert_eq!(req.session().find_equiv(&"foo").unwrap().as_slice(),
+            assert_eq!(req.session().find_equiv("foo").unwrap().as_slice(),
                        "bar");
             Ok(Response {
                 status: (200, "OK"),
