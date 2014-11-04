@@ -7,7 +7,7 @@ extern crate serialize;
 #[cfg(test)] extern crate "conduit-test" as test;
 
 use std::fmt::Show;
-use std::collections::hashmap::{Occupied, Vacant};
+use std::collections::hash_map::{Occupied, Vacant};
 use conduit::{Request, Response};
 use cookie::{CookieJar, Cookie};
 
