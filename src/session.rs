@@ -123,7 +123,8 @@ mod test {
         assert!(app.call(&mut req).is_ok());
 
         fn set_session(req: &mut Request) -> Result<Response, String> {
-            assert!(req.session().insert("foo".to_string(), "bar".to_string()));
+            assert!(req.session().insert("foo".to_string(), "bar".to_string())
+                                 .is_none());
             Ok(Response {
                 status: (200, "OK"),
                 headers: HashMap::new(),
