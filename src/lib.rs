@@ -58,7 +58,7 @@ impl conduit_middleware::Middleware for Middleware {
                 Vacant(e) => e.set(Vec::new()),
             };
             for delta in jar.delta().into_iter() {
-                cookies.push(delta);
+                cookies.push(delta.to_string());
             }
         }
         Ok(res)
