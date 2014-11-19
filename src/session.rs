@@ -11,6 +11,7 @@ use super::RequestCookies;
 
 pub struct SessionMiddleware {
     cookie_name: String,
+    secure: bool,
 }
 
 pub struct Session {
@@ -18,8 +19,11 @@ pub struct Session {
 }
 
 impl SessionMiddleware {
-    pub fn new(cookie: &str) -> SessionMiddleware {
-        SessionMiddleware { cookie_name: cookie.to_string() }
+    pub fn new(cookie: &str, secure: bool) -> SessionMiddleware {
+        SessionMiddleware {
+            cookie_name: cookie.to_string(),
+            secure: secure,
+        }
     }
 
     pub fn decode(&self, cookie: Cookie) -> HashMap<String, String> {
@@ -69,12 +73,14 @@ impl conduit_middleware::Middleware for SessionMiddleware {
     fn after(&self, req: &mut Request, res: Result<Response, Box<Show + 'static>>)
         -> Result<Response, Box<Show + 'static>>
     {
-        let cookie = {
+        let mut cookie = {
             let session = req.mut_extensions().find::<Session>();
             let session = session.expect("session must be present after request");
             let encoded = self.encode(&session.data);
             Cookie::new(self.cookie_name.to_string(), encoded)
         };
+        cookie.httponly = true;
+        cookie.secure = self.secure;
         req.cookies().signed().add(cookie);
         return res;
     }
@@ -109,7 +115,7 @@ mod test {
         // Set the session cookie
         let mut app = MiddlewareBuilder::new(set_session);
         app.add(Middleware::new(b"foo"));
-        app.add(SessionMiddleware::new("lol"));
+        app.add(SessionMiddleware::new("lol", false));
         let response = app.call(&mut req).ok().unwrap();
 
         let v = response.headers["Set-Cookie".to_string()].as_slice();
@@ -119,7 +125,7 @@ mod test {
         req.header("Cookie", v.as_slice()[0].as_slice());
         let mut app = MiddlewareBuilder::new(use_session);
         app.add(Middleware::new(b"foo"));
-        app.add(SessionMiddleware::new("lol"));
+        app.add(SessionMiddleware::new("lol", false));
         assert!(app.call(&mut req).is_ok());
 
         fn set_session(req: &mut Request) -> Result<Response, String> {
