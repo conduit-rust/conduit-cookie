@@ -33,9 +33,11 @@ impl conduit_middleware::Middleware for Middleware {
             match headers.find("Cookie") {
                 Some(cookies) => {
                     for cookie in cookies.iter() {
-                        match Cookie::parse(*cookie) {
-                            Ok(c) => jar.add_original(c),
-                            Err(..) => {}
+                        for cookie in cookie.split(';').map(|s| s.trim()) {
+                            match Cookie::parse(cookie) {
+                                Ok(c) => jar.add_original(c),
+                                Err(..) => {}
+                            }
                         }
                     }
                 }
