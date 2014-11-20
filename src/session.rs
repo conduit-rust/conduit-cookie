@@ -33,6 +33,7 @@ impl SessionMiddleware {
         loop {
             match (parts.next(), parts.next()) {
                 (Some(key), Some(value)) => {
+                    if key.len() == 0 { break }
                     match (str::from_utf8(key), str::from_utf8(value)) {
                         (Some(key), Some(value)) => {
                             ret.insert(key.to_string(), value.to_string());
@@ -53,6 +54,9 @@ impl SessionMiddleware {
             ret.push_all(k.as_bytes());
             ret.push(0xff);
             ret.push_all(v.as_bytes());
+        }
+        while ret.len() * 8 % 6 != 0 {
+            ret.push(0xff);
         }
         ret.as_slice().to_base64(STANDARD)
     }
@@ -106,6 +110,8 @@ mod test {
     use std::collections::HashMap;
     use std::io::MemReader;
 
+    use cookie::Cookie;
+
     use {RequestSession, Middleware, SessionMiddleware};
 
     #[test]
@@ -146,5 +152,18 @@ mod test {
                 body: box MemReader::new(Vec::new()),
             })
         }
+    }
+
+    #[test]
+    fn no_equals() {
+        let m = SessionMiddleware::new("test", false);
+        let e = {
+            let mut map = HashMap::new();
+            map.insert("a".to_string(), "bc".to_string());
+            m.encode(&map)
+        };
+        assert!(!e.ends_with("="));
+        let m = m.decode(Cookie::new("foo".to_string(), e));
+        assert_eq!(m.get("a").unwrap().as_slice(), "bc");
     }
 }
