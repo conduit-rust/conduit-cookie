@@ -71,7 +71,7 @@ pub trait RequestCookies<'a> {
     fn cookies(self) -> &'a CookieJar<'static>;
 }
 
-impl<'a> RequestCookies<'a> for &'a Request + 'a {
+impl<'a> RequestCookies<'a> for &'a (Request + 'a) {
     fn cookies(self) -> &'a CookieJar<'static> {
         self.extensions().find::<CookieJar<'static>>()
             .expect("Missing cookie jar")
@@ -81,7 +81,7 @@ impl<'a> RequestCookies<'a> for &'a Request + 'a {
 #[cfg(test)]
 mod tests {
 
-    use conduit::{Request, Response, Handler, Post};
+    use conduit::{Request, Response, Handler, Method};
     use conduit_middleware::MiddlewareBuilder;
     use cookie::Cookie;
     use test::MockRequest;
@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn request_headers() {
-        let mut req = MockRequest::new(Post, "/articles");
+        let mut req = MockRequest::new(Method::Post, "/articles");
         req.header("Cookie", "foo=bar");
 
         let mut app = MiddlewareBuilder::new(test);
@@ -111,7 +111,7 @@ mod tests {
 
     #[test]
     fn set_cookie() {
-        let mut req = MockRequest::new(Post, "/articles");
+        let mut req = MockRequest::new(Method::Post, "/articles");
         let mut app = MiddlewareBuilder::new(test);
         app.add(Middleware::new(b"foo"));
         let response = app.call(&mut req).ok().unwrap();

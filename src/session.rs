@@ -94,7 +94,7 @@ pub trait RequestSession<'a> {
     fn session(self) -> &'a mut HashMap<String, String>;
 }
 
-impl<'a> RequestSession<'a> for &'a mut Request + 'a {
+impl<'a> RequestSession<'a> for &'a mut (Request + 'a) {
     fn session(self) -> &'a mut HashMap<String, String> {
         &mut self.mut_extensions().find_mut::<Session>()
                  .expect("missing cookie session").data
@@ -104,7 +104,7 @@ impl<'a> RequestSession<'a> for &'a mut Request + 'a {
 #[cfg(test)]
 mod test {
 
-    use conduit::{Request, Response, Handler, Post};
+    use conduit::{Request, Response, Handler, Method};
     use conduit_middleware::MiddlewareBuilder;
     use test::MockRequest;
     use std::collections::HashMap;
@@ -116,7 +116,7 @@ mod test {
 
     #[test]
     fn simple() {
-        let mut req = MockRequest::new(Post, "/articles");
+        let mut req = MockRequest::new(Method::Post, "/articles");
 
         // Set the session cookie
         let mut app = MiddlewareBuilder::new(set_session);
@@ -144,8 +144,7 @@ mod test {
             })
         }
         fn use_session(req: &mut Request) -> Result<Response, String> {
-            assert_eq!(req.session().find_equiv("foo").unwrap().as_slice(),
-                       "bar");
+            assert_eq!(req.session().get("foo").unwrap().as_slice(), "bar");
             Ok(Response {
                 status: (200, "OK"),
                 headers: HashMap::new(),
