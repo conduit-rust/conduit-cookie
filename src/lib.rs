@@ -1,4 +1,5 @@
 #![feature(macro_rules, globs)]
+#![cfg_attr(test, deny(warnings))]
 
 extern crate conduit;
 extern crate "conduit-middleware" as conduit_middleware;
