@@ -35,7 +35,7 @@ impl SessionMiddleware {
                 (Some(key), Some(value)) => {
                     if key.len() == 0 { break }
                     match (str::from_utf8(key), str::from_utf8(value)) {
-                        (Some(key), Some(value)) => {
+                        (Ok(key), Ok(value)) => {
                             ret.insert(key.to_string(), value.to_string());
                         }
                         _ => {}
