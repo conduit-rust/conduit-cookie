@@ -4,7 +4,7 @@
 extern crate conduit;
 extern crate "conduit-middleware" as conduit_middleware;
 extern crate cookie;
-extern crate serialize;
+extern crate "rustc-serialize" as serialize;
 #[cfg(test)] extern crate "conduit-test" as test;
 
 use std::fmt::Show;
