@@ -56,9 +56,9 @@ impl conduit_middleware::Middleware for Middleware {
         let mut res = try!(res);
         {
             let jar = req.cookies();
-            let cookies = match res.headers.entry("Set-Cookie".to_string()) {
+            let cookies = match res.headers.entry("Set-Cookie") {
                 Entry::Occupied(e) => e.into_mut(),
-                Entry::Vacant(e) => e.set(Vec::new()),
+                Entry::Vacant(e) => e.insert(Vec::new()),
             };
             for delta in jar.delta().into_iter() {
                 cookies.push(delta.to_string());
