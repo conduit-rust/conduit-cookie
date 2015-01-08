@@ -1,4 +1,3 @@
-#![feature(macro_rules, globs)]
 #![cfg_attr(test, deny(warnings))]
 
 extern crate conduit;
