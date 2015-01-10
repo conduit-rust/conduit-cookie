@@ -1,4 +1,5 @@
 #![cfg_attr(test, deny(warnings))]
+#![cfg_attr(test, allow(unstable))]
 
 extern crate conduit;
 extern crate "conduit-middleware" as conduit_middleware;
@@ -6,7 +7,7 @@ extern crate cookie;
 extern crate "rustc-serialize" as serialize;
 #[cfg(test)] extern crate "conduit-test" as test;
 
-use std::fmt::Show;
+use std::error::Error;
 use std::collections::hash_map::Entry;
 use conduit::{Request, Response};
 use cookie::{CookieJar, Cookie};
@@ -26,7 +27,7 @@ impl Middleware {
 }
 
 impl conduit_middleware::Middleware for Middleware {
-    fn before(&self, req: &mut Request) -> Result<(), Box<Show + 'static>> {
+    fn before(&self, req: &mut Request) -> Result<(), Box<Error>> {
         let jar = {
             let headers = req.headers();
             let mut jar = CookieJar::new(self.key.as_slice());
@@ -49,13 +50,13 @@ impl conduit_middleware::Middleware for Middleware {
         Ok(())
     }
 
-    fn after(&self, req: &mut Request, res: Result<Response, Box<Show + 'static>>)
-        -> Result<Response, Box<Show + 'static>>
+    fn after(&self, req: &mut Request, res: Result<Response, Box<Error>>)
+        -> Result<Response, Box<Error>>
     {
         let mut res = try!(res);
         {
             let jar = req.cookies();
-            let cookies = match res.headers.entry("Set-Cookie") {
+            let cookies = match res.headers.entry("Set-Cookie".to_string()) {
                 Entry::Occupied(e) => e.into_mut(),
                 Entry::Vacant(e) => e.insert(Vec::new()),
             };
@@ -80,13 +81,14 @@ impl<'a> RequestCookies<'a> for &'a (Request + 'a) {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+    use std::error::Error;
+    use std::io::MemReader;
 
     use conduit::{Request, Response, Handler, Method};
     use conduit_middleware::MiddlewareBuilder;
     use cookie::Cookie;
     use test::MockRequest;
-    use std::collections::HashMap;
-    use std::io::MemReader;
 
     use super::{RequestCookies, Middleware};
 
@@ -99,12 +101,12 @@ mod tests {
         app.add(Middleware::new(b"foo"));
         assert!(app.call(&mut req).is_ok());
 
-        fn test(req: &mut Request) -> Result<Response, String> {
+        fn test(req: &mut Request) -> Result<Response, Box<Error>> {
             assert!(req.cookies().find("foo").is_some());
             Ok(Response {
                 status: (200, "OK"),
                 headers: HashMap::new(),
-                body: box MemReader::new(Vec::new()),
+                body: Box::new(MemReader::new(Vec::new())),
             })
         }
     }
@@ -118,13 +120,13 @@ mod tests {
         let v = response.headers["Set-Cookie".to_string()].as_slice();
         assert_eq!(v, ["foo=bar; Path=/".to_string()].as_slice());
 
-        fn test(req: &mut Request) -> Result<Response, String> {
+        fn test(req: &mut Request) -> Result<Response, Box<Error>> {
             let c = Cookie::new("foo".to_string(), "bar".to_string());
             req.cookies().add(c);
             Ok(Response {
                 status: (200, "OK"),
                 headers: HashMap::new(),
-                body: box MemReader::new(Vec::new()),
+                body: Box::new(MemReader::new(Vec::new())),
             })
         }
     }

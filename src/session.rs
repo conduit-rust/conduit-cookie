@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fmt::Show;
+use std::error::Error;
 use std::str;
 use serialize::base64::{FromBase64, ToBase64, STANDARD};
 
@@ -63,7 +63,7 @@ impl SessionMiddleware {
 }
 
 impl conduit_middleware::Middleware for SessionMiddleware {
-    fn before(&self, req: &mut Request) -> Result<(), Box<Show + 'static>> {
+    fn before(&self, req: &mut Request) -> Result<(), Box<Error>> {
         let session = {
             let jar = req.cookies().signed();
             jar.find(self.cookie_name.as_slice()).map(|cookie| {
@@ -74,8 +74,8 @@ impl conduit_middleware::Middleware for SessionMiddleware {
         Ok(())
     }
 
-    fn after(&self, req: &mut Request, res: Result<Response, Box<Show + 'static>>)
-        -> Result<Response, Box<Show + 'static>>
+    fn after(&self, req: &mut Request, res: Result<Response, Box<Error>>)
+        -> Result<Response, Box<Error>>
     {
         let mut cookie = {
             let session = req.mut_extensions().find::<Session>();
@@ -104,13 +104,14 @@ impl<'a> RequestSession<'a> for &'a mut (Request + 'a) {
 #[cfg(test)]
 mod test {
 
-    use conduit::{Request, Response, Handler, Method};
-    use conduit_middleware::MiddlewareBuilder;
-    use test::MockRequest;
     use std::collections::HashMap;
+    use std::error::Error;
     use std::io::MemReader;
 
+    use conduit::{Request, Response, Handler, Method};
+    use conduit_middleware::MiddlewareBuilder;
     use cookie::Cookie;
+    use test::MockRequest;
 
     use {RequestSession, Middleware, SessionMiddleware};
 
@@ -134,21 +135,21 @@ mod test {
         app.add(SessionMiddleware::new("lol", false));
         assert!(app.call(&mut req).is_ok());
 
-        fn set_session(req: &mut Request) -> Result<Response, String> {
+        fn set_session(req: &mut Request) -> Result<Response, Box<Error>> {
             assert!(req.session().insert("foo".to_string(), "bar".to_string())
                                  .is_none());
             Ok(Response {
                 status: (200, "OK"),
                 headers: HashMap::new(),
-                body: box MemReader::new(Vec::new()),
+                body: Box::new(MemReader::new(Vec::new())),
             })
         }
-        fn use_session(req: &mut Request) -> Result<Response, String> {
+        fn use_session(req: &mut Request) -> Result<Response, Box<Error>> {
             assert_eq!(req.session().get("foo").unwrap().as_slice(), "bar");
             Ok(Response {
                 status: (200, "OK"),
                 headers: HashMap::new(),
-                body: box MemReader::new(Vec::new()),
+                body: Box::new(MemReader::new(Vec::new())),
             })
         }
     }
