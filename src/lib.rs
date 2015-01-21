@@ -27,7 +27,7 @@ impl Middleware {
 }
 
 impl conduit_middleware::Middleware for Middleware {
-    fn before(&self, req: &mut Request) -> Result<(), Box<Error>> {
+    fn before(&self, req: &mut Request) -> Result<(), Box<Error+Send>> {
         let jar = {
             let headers = req.headers();
             let mut jar = CookieJar::new(self.key.as_slice());
@@ -50,8 +50,8 @@ impl conduit_middleware::Middleware for Middleware {
         Ok(())
     }
 
-    fn after(&self, req: &mut Request, res: Result<Response, Box<Error>>)
-        -> Result<Response, Box<Error>>
+    fn after(&self, req: &mut Request, res: Result<Response, Box<Error+Send>>)
+        -> Result<Response, Box<Error+Send>>
     {
         let mut res = try!(res);
         {
@@ -101,7 +101,7 @@ mod tests {
         app.add(Middleware::new(b"foo"));
         assert!(app.call(&mut req).is_ok());
 
-        fn test(req: &mut Request) -> Result<Response, Box<Error>> {
+        fn test(req: &mut Request) -> Result<Response, Box<Error+Send>> {
             assert!(req.cookies().find("foo").is_some());
             Ok(Response {
                 status: (200, "OK"),
@@ -120,7 +120,7 @@ mod tests {
         let v = response.headers["Set-Cookie".to_string()].as_slice();
         assert_eq!(v, ["foo=bar; Path=/".to_string()].as_slice());
 
-        fn test(req: &mut Request) -> Result<Response, Box<Error>> {
+        fn test(req: &mut Request) -> Result<Response, Box<Error+Send>> {
             let c = Cookie::new("foo".to_string(), "bar".to_string());
             req.cookies().add(c);
             Ok(Response {
