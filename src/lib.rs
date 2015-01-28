@@ -83,7 +83,7 @@ impl<'a> RequestCookies<'a> for &'a (Request + 'a) {
 mod tests {
     use std::collections::HashMap;
     use std::error::Error;
-    use std::io::MemReader;
+    use std::old_io::MemReader;
 
     use conduit::{Request, Response, Handler, Method};
     use conduit_middleware::MiddlewareBuilder;
