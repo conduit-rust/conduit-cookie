@@ -1,5 +1,6 @@
+#![feature(collections, std_misc, core)]
+#![cfg_attr(test, feature(io))]
 #![cfg_attr(test, deny(warnings))]
-#![cfg_attr(test, allow(unstable))]
 
 extern crate conduit;
 extern crate "conduit-middleware" as conduit_middleware;
