@@ -83,8 +83,7 @@ impl<'a> RequestCookies<'a> for &'a (Request + 'a) {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::error::Error;
-    use std::old_io::MemReader;
+    use std::old_io::{MemReader, IoError};
 
     use conduit::{Request, Response, Handler, Method};
     use conduit_middleware::MiddlewareBuilder;
@@ -102,7 +101,7 @@ mod tests {
         app.add(Middleware::new(b"foo"));
         assert!(app.call(&mut req).is_ok());
 
-        fn test(req: &mut Request) -> Result<Response, Box<Error+Send>> {
+        fn test(req: &mut Request) -> Result<Response, IoError> {
             assert!(req.cookies().find("foo").is_some());
             Ok(Response {
                 status: (200, "OK"),
@@ -121,7 +120,7 @@ mod tests {
         let v = response.headers["Set-Cookie".to_string()].as_slice();
         assert_eq!(v, ["foo=bar; Path=/".to_string()].as_slice());
 
-        fn test(req: &mut Request) -> Result<Response, Box<Error+Send>> {
+        fn test(req: &mut Request) -> Result<Response, IoError> {
             let c = Cookie::new("foo".to_string(), "bar".to_string());
             req.cookies().add(c);
             Ok(Response {

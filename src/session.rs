@@ -105,8 +105,7 @@ impl<'a> RequestSession<'a> for &'a mut (Request + 'a) {
 mod test {
 
     use std::collections::HashMap;
-    use std::error::Error;
-    use std::old_io::MemReader;
+    use std::old_io::{MemReader, IoError};
 
     use conduit::{Request, Response, Handler, Method};
     use conduit_middleware::MiddlewareBuilder;
@@ -135,7 +134,7 @@ mod test {
         app.add(SessionMiddleware::new("lol", false));
         assert!(app.call(&mut req).is_ok());
 
-        fn set_session(req: &mut Request) -> Result<Response, Box<Error+Send>> {
+        fn set_session(req: &mut Request) -> Result<Response, IoError> {
             assert!(req.session().insert("foo".to_string(), "bar".to_string())
                                  .is_none());
             Ok(Response {
@@ -144,7 +143,7 @@ mod test {
                 body: Box::new(MemReader::new(Vec::new())),
             })
         }
-        fn use_session(req: &mut Request) -> Result<Response, Box<Error+Send>> {
+        fn use_session(req: &mut Request) -> Result<Response, IoError> {
             assert_eq!(req.session().get("foo").unwrap().as_slice(), "bar");
             Ok(Response {
                 status: (200, "OK"),
