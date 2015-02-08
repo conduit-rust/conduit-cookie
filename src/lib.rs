@@ -1,4 +1,4 @@
-#![feature(collections, std_misc, core)]
+#![feature(collections, core)]
 #![cfg_attr(test, feature(io))]
 #![cfg_attr(test, deny(warnings))]
 
