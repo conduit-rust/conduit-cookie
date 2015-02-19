@@ -1,5 +1,5 @@
-#![feature(collections, core)]
-#![cfg_attr(test, feature(io))]
+#![feature(collections, core, std_misc)]
+#![cfg_attr(test, feature(old_io))]
 #![cfg_attr(test, deny(warnings))]
 
 extern crate conduit;
