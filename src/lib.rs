@@ -1,5 +1,5 @@
 #![feature(collections, core, std_misc)]
-#![cfg_attr(test, feature(old_io))]
+#![cfg_attr(test, feature(io))]
 #![cfg_attr(test, deny(warnings))]
 
 extern crate conduit;
@@ -83,7 +83,7 @@ impl<'a> RequestCookies<'a> for &'a (Request + 'a) {
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::old_io::{MemReader, IoError};
+    use std::io::{self, Cursor};
 
     use conduit::{Request, Response, Handler, Method};
     use conduit_middleware::MiddlewareBuilder;
@@ -101,12 +101,12 @@ mod tests {
         app.add(Middleware::new(b"foo"));
         assert!(app.call(&mut req).is_ok());
 
-        fn test(req: &mut Request) -> Result<Response, IoError> {
+        fn test(req: &mut Request) -> io::Result<Response> {
             assert!(req.cookies().find("foo").is_some());
             Ok(Response {
                 status: (200, "OK"),
                 headers: HashMap::new(),
-                body: Box::new(MemReader::new(Vec::new())),
+                body: Box::new(Cursor::new(Vec::new())),
             })
         }
     }
@@ -120,13 +120,13 @@ mod tests {
         let v = response.headers["Set-Cookie".to_string()].as_slice();
         assert_eq!(v, ["foo=bar; Path=/".to_string()].as_slice());
 
-        fn test(req: &mut Request) -> Result<Response, IoError> {
+        fn test(req: &mut Request) -> io::Result<Response> {
             let c = Cookie::new("foo".to_string(), "bar".to_string());
             req.cookies().add(c);
             Ok(Response {
                 status: (200, "OK"),
                 headers: HashMap::new(),
-                body: Box::new(MemReader::new(Vec::new())),
+                body: Box::new(Cursor::new(Vec::new())),
             })
         }
     }
