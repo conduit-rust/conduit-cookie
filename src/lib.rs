@@ -1,11 +1,11 @@
-#![feature(collections, core, std_misc)]
+#![feature(collections)]
 #![cfg_attr(test, deny(warnings))]
 
 extern crate conduit;
-extern crate "conduit-middleware" as conduit_middleware;
+extern crate conduit_middleware;
 extern crate cookie;
-extern crate "rustc-serialize" as serialize;
-#[cfg(test)] extern crate "conduit-test" as test;
+extern crate rustc_serialize;
+#[cfg(test)] extern crate conduit_test;
 
 use std::error::Error;
 use std::collections::hash_map::Entry;
@@ -30,7 +30,7 @@ impl conduit_middleware::Middleware for Middleware {
     fn before(&self, req: &mut Request) -> Result<(), Box<Error+Send>> {
         let jar = {
             let headers = req.headers();
-            let mut jar = CookieJar::new(self.key.as_slice());
+            let mut jar = CookieJar::new(&self.key);
             match headers.find("Cookie") {
                 Some(cookies) => {
                     for cookie in cookies.iter() {
@@ -87,7 +87,7 @@ mod tests {
     use conduit::{Request, Response, Handler, Method};
     use conduit_middleware::MiddlewareBuilder;
     use cookie::Cookie;
-    use test::MockRequest;
+    use conduit_test::MockRequest;
 
     use super::{RequestCookies, Middleware};
 
@@ -116,8 +116,8 @@ mod tests {
         let mut app = MiddlewareBuilder::new(test);
         app.add(Middleware::new(b"foo"));
         let response = app.call(&mut req).ok().unwrap();
-        let v = response.headers["Set-Cookie".to_string()].as_slice();
-        assert_eq!(v, ["foo=bar; Path=/".to_string()].as_slice());
+        let v = &response.headers["Set-Cookie"];
+        assert_eq!(&v[..], ["foo=bar; Path=/".to_string()]);
 
         fn test(req: &mut Request) -> io::Result<Response> {
             let c = Cookie::new("foo".to_string(), "bar".to_string());

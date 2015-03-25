@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::str;
-use serialize::base64::{FromBase64, ToBase64, STANDARD};
+use rustc_serialize::base64::{FromBase64, ToBase64, STANDARD};
 
 use conduit::{Request, Response};
 use conduit_middleware;
@@ -28,8 +28,8 @@ impl SessionMiddleware {
 
     pub fn decode(&self, cookie: Cookie) -> HashMap<String, String> {
         let mut ret = HashMap::new();
-        let bytes = cookie.value.as_slice().from_base64().unwrap_or(Vec::new());
-        let mut parts = bytes.as_slice().split(|&a| a == 0xff);
+        let bytes = cookie.value.from_base64().unwrap_or(Vec::new());
+        let mut parts = bytes.split(|&a| a == 0xff);
         loop {
             match (parts.next(), parts.next()) {
                 (Some(key), Some(value)) => {
@@ -58,7 +58,7 @@ impl SessionMiddleware {
         while ret.len() * 8 % 6 != 0 {
             ret.push(0xff);
         }
-        ret.as_slice().to_base64(STANDARD)
+        ret.to_base64(STANDARD)
     }
 }
 
@@ -66,7 +66,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
     fn before(&self, req: &mut Request) -> Result<(), Box<Error+Send>> {
         let session = {
             let jar = req.cookies().signed();
-            jar.find(self.cookie_name.as_slice()).map(|cookie| {
+            jar.find(&self.cookie_name).map(|cookie| {
                 self.decode(cookie)
             }).unwrap_or_else(|| HashMap::new())
         };
@@ -110,7 +110,7 @@ mod test {
     use conduit::{Request, Response, Handler, Method};
     use conduit_middleware::MiddlewareBuilder;
     use cookie::Cookie;
-    use test::MockRequest;
+    use conduit_test::MockRequest;
 
     use {RequestSession, Middleware, SessionMiddleware};
 
@@ -124,11 +124,11 @@ mod test {
         app.add(SessionMiddleware::new("lol", false));
         let response = app.call(&mut req).ok().unwrap();
 
-        let v = response.headers["Set-Cookie".to_string()].as_slice();
-        assert!(v[0].as_slice().starts_with("lol"));
+        let v = &response.headers["Set-Cookie"];
+        assert!(v[0].starts_with("lol"));
 
         // Use the session cookie
-        req.header("Cookie", v.as_slice()[0].as_slice());
+        req.header("Cookie", &v[0]);
         let mut app = MiddlewareBuilder::new(use_session);
         app.add(Middleware::new(b"foo"));
         app.add(SessionMiddleware::new("lol", false));
@@ -144,7 +144,7 @@ mod test {
             })
         }
         fn use_session(req: &mut Request) -> io::Result<Response> {
-            assert_eq!(req.session().get("foo").unwrap().as_slice(), "bar");
+            assert_eq!(*req.session().get("foo").unwrap(), "bar");
             Ok(Response {
                 status: (200, "OK"),
                 headers: HashMap::new(),
@@ -163,6 +163,6 @@ mod test {
         };
         assert!(!e.ends_with("="));
         let m = m.decode(Cookie::new("foo".to_string(), e));
-        assert_eq!(m.get("a").unwrap().as_slice(), "bc");
+        assert_eq!(*m.get("a").unwrap(), "bc");
     }
 }
