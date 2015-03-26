@@ -68,12 +68,12 @@ impl conduit_middleware::Middleware for Middleware {
     }
 }
 
-pub trait RequestCookies<'a> {
-    fn cookies(self) -> &'a CookieJar<'static>;
+pub trait RequestCookies {
+    fn cookies(&self) -> &CookieJar<'static>;
 }
 
-impl<'a> RequestCookies<'a> for &'a (Request + 'a) {
-    fn cookies(self) -> &'a CookieJar<'static> {
+impl<'a> RequestCookies for Request+'a {
+    fn cookies(&self) -> &CookieJar<'static> {
         self.extensions().find::<CookieJar<'static>>()
             .expect("Missing cookie jar")
     }

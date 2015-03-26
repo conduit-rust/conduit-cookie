@@ -90,12 +90,12 @@ impl conduit_middleware::Middleware for SessionMiddleware {
     }
 }
 
-pub trait RequestSession<'a> {
-    fn session(self) -> &'a mut HashMap<String, String>;
+pub trait RequestSession {
+    fn session(&mut self) -> &mut HashMap<String, String>;
 }
 
-impl<'a> RequestSession<'a> for &'a mut (Request + 'a) {
-    fn session(self) -> &'a mut HashMap<String, String> {
+impl<'a> RequestSession for Request+'a {
+    fn session(&mut self) -> &mut HashMap<String, String> {
         &mut self.mut_extensions().find_mut::<Session>()
                  .expect("missing cookie session").data
     }
