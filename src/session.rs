@@ -51,9 +51,9 @@ impl SessionMiddleware {
         let mut ret = Vec::new();
         for (i, (k, v)) in h.iter().enumerate() {
             if i != 0 { ret.push(0xff) }
-            ret.push_all(k.as_bytes());
+            ret.extend(k.bytes());
             ret.push(0xff);
-            ret.push_all(v.as_bytes());
+            ret.extend(v.bytes());
         }
         while ret.len() * 8 % 6 != 0 {
             ret.push(0xff);
