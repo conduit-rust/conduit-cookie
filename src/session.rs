@@ -85,6 +85,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
         };
         cookie.httponly = true;
         cookie.secure = self.secure;
+        cookie.path = Some("/".to_string());
         req.cookies().signed().add(cookie);
         return res;
     }
