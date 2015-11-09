@@ -8,7 +8,7 @@ description = "Cookie and session middleware for conduit-based stacks"
 repository = "https://github.com/conduit-rust/conduit-cookie"
 
 [dependencies]
-cookie = "0.1"
+cookie = "0.2"
 conduit = "0.7"
 conduit-middleware = "0.7"
 rustc-serialize = "0.3"

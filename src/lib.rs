@@ -116,7 +116,7 @@ mod tests {
         app.add(Middleware::new(b"foo"));
         let response = app.call(&mut req).ok().unwrap();
         let v = &response.headers["Set-Cookie"];
-        assert_eq!(&v[..], ["foo=bar; Path=/".to_string()]);
+        assert_eq!(&v[..], ["foo=bar".to_string()]);
 
         fn test(req: &mut Request) -> io::Result<Response> {
             let c = Cookie::new("foo".to_string(), "bar".to_string());
