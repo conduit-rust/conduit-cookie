@@ -2,16 +2,16 @@
 
 name = "conduit-cookie"
 authors = ["Alex Crichton <alex@alexcrichton.com>"]
-version = "0.7.6"
+version = "0.8.0"
 license = "MIT"
 description = "Cookie and session middleware for conduit-based stacks"
 repository = "https://github.com/conduit-rust/conduit-cookie"
 
 [dependencies]
-cookie = "0.2"
-conduit = "0.7"
-conduit-middleware = "0.7"
+cookie = "0.3"
+conduit = "0.8"
+conduit-middleware = "0.8"
 rustc-serialize = "0.3"
 
 [dev-dependencies]
-conduit-test = "0.7"
+conduit-test = "0.8"
