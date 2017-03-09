@@ -95,7 +95,7 @@ pub trait RequestSession {
     fn session(&mut self) -> &mut HashMap<String, String>;
 }
 
-impl<'a> RequestSession for Request+'a {
+impl<T: Request + ?Sized> RequestSession for T {
     fn session(&mut self) -> &mut HashMap<String, String> {
         &mut self.mut_extensions().find_mut::<Session>()
                  .expect("missing cookie session").data

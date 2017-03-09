@@ -71,7 +71,7 @@ pub trait RequestCookies {
     fn cookies(&self) -> &CookieJar<'static>;
 }
 
-impl<'a> RequestCookies for Request+'a {
+impl<T: Request + ?Sized> RequestCookies for T {
     fn cookies(&self) -> &CookieJar<'static> {
         self.extensions().find::<CookieJar<'static>>()
             .expect("Missing cookie jar")
