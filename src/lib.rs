@@ -3,7 +3,7 @@
 extern crate conduit;
 extern crate conduit_middleware;
 extern crate cookie;
-extern crate rustc_serialize;
+extern crate base64;
 #[cfg(test)] extern crate conduit_test;
 
 use std::error::Error;
