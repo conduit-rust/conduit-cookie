@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::str;
-use rustc_serialize::base64::{FromBase64, ToBase64, STANDARD};
+use base64::{encode, decode};
 
 use conduit::{Request, Response};
 use conduit_middleware;
@@ -28,7 +28,7 @@ impl SessionMiddleware {
 
     pub fn decode(&self, cookie: Cookie) -> HashMap<String, String> {
         let mut ret = HashMap::new();
-        let bytes = cookie.value.from_base64().unwrap_or(Vec::new());
+        let bytes = decode(&cookie.value[..]).unwrap_or(Vec::new());
         let mut parts = bytes.split(|&a| a == 0xff);
         loop {
             match (parts.next(), parts.next()) {
@@ -58,7 +58,7 @@ impl SessionMiddleware {
         while ret.len() * 8 % 6 != 0 {
             ret.push(0xff);
         }
-        ret.to_base64(STANDARD)
+        encode(&ret[..])
     }
 }
 
