@@ -10,7 +10,10 @@ version = "0.8.3"
 base64 = "0.6"
 conduit = "0.8"
 conduit-middleware = "0.8"
-cookie = "0.5.1"
+
+[dependencies.cookie]
+features = ["secure"]
+version = "0.9"
 
 [dev-dependencies]
 conduit-test = "0.8"
