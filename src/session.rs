@@ -30,25 +30,17 @@ impl SessionMiddleware {
 
     pub fn decode(&self, cookie: Cookie) -> HashMap<String, String> {
         let mut ret = HashMap::new();
-        let bytes = decode(cookie.value().as_bytes()).unwrap_or(Vec::new());
+        let bytes = decode(cookie.value().as_bytes()).unwrap_or_default();
         let mut parts = bytes.split(|&a| a == 0xff);
-        loop {
-            match (parts.next(), parts.next()) {
-                (Some(key), Some(value)) => {
-                    if key.len() == 0 {
-                        break;
-                    }
-                    match (str::from_utf8(key), str::from_utf8(value)) {
-                        (Ok(key), Ok(value)) => {
-                            ret.insert(key.to_string(), value.to_string());
-                        }
-                        _ => {}
-                    }
-                }
-                _ => break,
+        while let (Some(key), Some(value)) = (parts.next(), parts.next())  {
+            if key.is_empty() {
+                break;
+            }
+            if let (Ok(key), Ok(value)) = (str::from_utf8(key), str::from_utf8(value)) {
+                ret.insert(key.to_string(), value.to_string());
             }
         }
-        return ret;
+        ret
     }
 
     pub fn encode(&self, h: &HashMap<String, String>) -> String {
@@ -74,7 +66,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
             let jar = req.cookies_mut().signed(&self.key);
             jar.get(&self.cookie_name)
                 .map(|cookie| self.decode(cookie))
-                .unwrap_or_else(|| HashMap::new())
+                .unwrap_or_else(HashMap::new)
         };
         req.mut_extensions().insert(Session { data: session });
         Ok(())
@@ -96,7 +88,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
                 .finish()
         };
         req.cookies_mut().signed(&self.key).add(cookie);
-        return res;
+        res
     }
 }
 

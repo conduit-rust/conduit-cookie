@@ -39,17 +39,14 @@ impl conduit_middleware::Middleware for Middleware {
         let jar = {
             let headers = req.headers();
             let mut jar = CookieJar::new();
-            match headers.find("Cookie") {
-                Some(cookies) => {
-                    for cookie in cookies.iter() {
-                        for cookie in cookie.split(';') {
-                            if let Some((key, value)) = parse_pair(cookie) {
-                                jar.add_original(Cookie::new(key, value));
-                            }
+            if let Some(cookies) = headers.find("Cookie") {
+                for cookie in cookies.iter() {
+                    for cookie in cookie.split(';') {
+                        if let Some((key, value)) = parse_pair(cookie) {
+                            jar.add_original(Cookie::new(key, value));
                         }
                     }
                 }
-                None => {}
             }
             jar
         };
