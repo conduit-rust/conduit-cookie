@@ -61,7 +61,7 @@ impl SessionMiddleware {
 }
 
 impl conduit_middleware::Middleware for SessionMiddleware {
-    fn before(&self, req: &mut Request) -> Result<(), Box<Error + Send>> {
+    fn before(&self, req: &mut dyn Request) -> Result<(), Box<dyn Error + Send>> {
         let session = {
             let jar = req.cookies_mut().signed(&self.key);
             jar.get(&self.cookie_name)
@@ -74,9 +74,9 @@ impl conduit_middleware::Middleware for SessionMiddleware {
 
     fn after(
         &self,
-        req: &mut Request,
-        res: Result<Response, Box<Error + Send>>,
-    ) -> Result<Response, Box<Error + Send>> {
+        req: &mut dyn Request,
+        res: Result<Response, Box<dyn Error + Send>>,
+    ) -> Result<Response, Box<dyn Error + Send>> {
         let cookie = {
             let session = req.mut_extensions().find::<Session>();
             let session = session.expect("session must be present after request");
@@ -145,7 +145,7 @@ mod test {
         app.add(SessionMiddleware::new("lol", key, false));
         assert!(app.call(&mut req).is_ok());
 
-        fn set_session(req: &mut Request) -> io::Result<Response> {
+        fn set_session(req: &mut dyn Request) -> io::Result<Response> {
             assert!(
                 req.session()
                     .insert("foo".to_string(), "bar".to_string())
@@ -157,7 +157,7 @@ mod test {
                 body: Box::new(Cursor::new(Vec::new())),
             })
         }
-        fn use_session(req: &mut Request) -> io::Result<Response> {
+        fn use_session(req: &mut dyn Request) -> io::Result<Response> {
             assert_eq!(*req.session().get("foo").unwrap(), "bar");
             Ok(Response {
                 status: (200, "OK"),

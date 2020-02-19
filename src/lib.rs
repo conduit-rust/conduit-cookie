@@ -35,7 +35,7 @@ fn parse_pair(key_value: &str) -> Option<(String, String)> {
 }
 
 impl conduit_middleware::Middleware for Middleware {
-    fn before(&self, req: &mut Request) -> Result<(), Box<Error + Send>> {
+    fn before(&self, req: &mut dyn Request) -> Result<(), Box<dyn Error + Send>> {
         let jar = {
             let headers = req.headers();
             let mut jar = CookieJar::new();
@@ -56,9 +56,9 @@ impl conduit_middleware::Middleware for Middleware {
 
     fn after(
         &self,
-        req: &mut Request,
-        res: Result<Response, Box<Error + Send>>,
-    ) -> Result<Response, Box<Error + Send>> {
+        req: &mut dyn Request,
+        res: Result<Response, Box<dyn Error + Send>>,
+    ) -> Result<Response, Box<dyn Error + Send>> {
         let mut res = res?;
         {
             let jar = req.cookies();
@@ -114,7 +114,7 @@ mod tests {
         app.add(Middleware::new());
         assert!(app.call(&mut req).is_ok());
 
-        fn test(req: &mut Request) -> io::Result<Response> {
+        fn test(req: &mut dyn Request) -> io::Result<Response> {
             assert!(req.cookies().get("foo").is_some());
             Ok(Response {
                 status: (200, "OK"),
@@ -133,7 +133,7 @@ mod tests {
         let v = &response.headers["Set-Cookie"];
         assert_eq!(&v[..], ["foo=bar".to_string()]);
 
-        fn test(req: &mut Request) -> io::Result<Response> {
+        fn test(req: &mut dyn Request) -> io::Result<Response> {
             let c = Cookie::new("foo".to_string(), "bar".to_string());
             req.cookies_mut().add(c);
             Ok(Response {
@@ -154,7 +154,7 @@ mod tests {
         v.sort();
         assert_eq!(&v[..], ["baz=qux".to_string(), "foo=bar".to_string()]);
 
-        fn test(req: &mut Request) -> io::Result<Response> {
+        fn test(req: &mut dyn Request) -> io::Result<Response> {
             let c = Cookie::new("foo".to_string(), "bar".to_string());
             req.cookies_mut().add(c);
             let c2 = Cookie::new("baz".to_string(), "qux".to_string());
