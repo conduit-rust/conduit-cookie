@@ -23,8 +23,8 @@ impl SessionMiddleware {
     pub fn new(cookie: &str, key: Key, secure: bool) -> SessionMiddleware {
         SessionMiddleware {
             cookie_name: cookie.to_string(),
-            key: key,
-            secure: secure,
+            key,
+            secure,
         }
     }
 
