@@ -1,7 +1,7 @@
+use base64::{decode, encode};
 use std::collections::HashMap;
 use std::error::Error;
 use std::str;
-use base64::{encode, decode};
 
 use conduit::{Request, Response};
 use conduit_middleware;
@@ -32,7 +32,7 @@ impl SessionMiddleware {
         let mut ret = HashMap::new();
         let bytes = decode(cookie.value().as_bytes()).unwrap_or_default();
         let mut parts = bytes.split(|&a| a == 0xff);
-        while let (Some(key), Some(value)) = (parts.next(), parts.next())  {
+        while let (Some(key), Some(value)) = (parts.next(), parts.next()) {
             if key.is_empty() {
                 break;
             }
@@ -98,7 +98,8 @@ pub trait RequestSession {
 
 impl<T: Request + ?Sized> RequestSession for T {
     fn session(&mut self) -> &mut HashMap<String, String> {
-        &mut self.mut_extensions()
+        &mut self
+            .mut_extensions()
             .find_mut::<Session>()
             .expect("missing cookie session")
             .data
@@ -111,12 +112,12 @@ mod test {
     use std::collections::HashMap;
     use std::io::{self, Cursor};
 
-    use conduit::{Request, Response, Handler, Method};
+    use conduit::{Handler, Method, Request, Response};
     use conduit_middleware::MiddlewareBuilder;
-    use cookie::{Cookie, Key};
     use conduit_test::MockRequest;
+    use cookie::{Cookie, Key};
 
-    use {RequestSession, Middleware, SessionMiddleware};
+    use {Middleware, RequestSession, SessionMiddleware};
 
     fn test_key() -> Key {
         let master_key: Vec<u8> = (0..32).collect();
@@ -146,11 +147,10 @@ mod test {
         assert!(app.call(&mut req).is_ok());
 
         fn set_session(req: &mut dyn Request) -> io::Result<Response> {
-            assert!(
-                req.session()
-                    .insert("foo".to_string(), "bar".to_string())
-                    .is_none()
-            );
+            assert!(req
+                .session()
+                .insert("foo".to_string(), "bar".to_string())
+                .is_none());
             Ok(Response {
                 status: (200, "OK"),
                 headers: HashMap::new(),

@@ -1,16 +1,16 @@
 #![cfg_attr(test, deny(warnings))]
 
+extern crate base64;
 extern crate conduit;
 extern crate conduit_middleware;
-extern crate cookie;
-extern crate base64;
 #[cfg(test)]
 extern crate conduit_test;
+extern crate cookie;
 
-use std::error::Error;
-use std::collections::hash_map::Entry;
 use conduit::{Request, Response};
-use cookie::{CookieJar, Cookie};
+use cookie::{Cookie, CookieJar};
+use std::collections::hash_map::Entry;
+use std::error::Error;
 
 pub use session::{RequestSession, SessionMiddleware};
 
@@ -81,15 +81,15 @@ pub trait RequestCookies {
 
 impl<T: Request + ?Sized> RequestCookies for T {
     fn cookies(&self) -> &CookieJar {
-        self.extensions().find::<CookieJar>().expect(
-            "Missing cookie jar",
-        )
+        self.extensions()
+            .find::<CookieJar>()
+            .expect("Missing cookie jar")
     }
 
     fn cookies_mut(&mut self) -> &mut CookieJar {
-        self.mut_extensions().find_mut::<CookieJar>().expect(
-            "Missing cookie jar",
-        )
+        self.mut_extensions()
+            .find_mut::<CookieJar>()
+            .expect("Missing cookie jar")
     }
 }
 
@@ -98,12 +98,12 @@ mod tests {
     use std::collections::HashMap;
     use std::io::{self, Cursor};
 
-    use conduit::{Request, Response, Handler, Method};
+    use conduit::{Handler, Method, Request, Response};
     use conduit_middleware::MiddlewareBuilder;
-    use cookie::Cookie;
     use conduit_test::MockRequest;
+    use cookie::Cookie;
 
-    use super::{RequestCookies, Middleware};
+    use super::{Middleware, RequestCookies};
 
     #[test]
     fn request_headers() {
