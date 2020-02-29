@@ -1,10 +1,9 @@
 use base64::{decode, encode};
 use std::collections::HashMap;
-use std::error::Error;
 use std::str;
 
-use conduit::{Request, Response};
-use conduit_middleware;
+use conduit::RequestExt;
+use conduit_middleware::{AfterResult, BeforeResult};
 use cookie::{Cookie, Key};
 
 use super::RequestCookies;
@@ -61,7 +60,7 @@ impl SessionMiddleware {
 }
 
 impl conduit_middleware::Middleware for SessionMiddleware {
-    fn before(&self, req: &mut dyn Request) -> Result<(), Box<dyn Error + Send>> {
+    fn before(&self, req: &mut dyn RequestExt) -> BeforeResult {
         let session = {
             let jar = req.cookies_mut().signed(&self.key);
             jar.get(&self.cookie_name)
@@ -72,11 +71,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
         Ok(())
     }
 
-    fn after(
-        &self,
-        req: &mut dyn Request,
-        res: Result<Response, Box<dyn Error + Send>>,
-    ) -> Result<Response, Box<dyn Error + Send>> {
+    fn after(&self, req: &mut dyn RequestExt, res: AfterResult) -> AfterResult {
         let cookie = {
             let session = req.mut_extensions().find::<Session>();
             let session = session.expect("session must be present after request");
@@ -96,7 +91,7 @@ pub trait RequestSession {
     fn session(&mut self) -> &mut HashMap<String, String>;
 }
 
-impl<T: Request + ?Sized> RequestSession for T {
+impl<T: RequestExt + ?Sized> RequestSession for T {
     fn session(&mut self) -> &mut HashMap<String, String> {
         &mut self
             .mut_extensions()
@@ -108,11 +103,9 @@ impl<T: Request + ?Sized> RequestSession for T {
 
 #[cfg(test)]
 mod test {
-
     use std::collections::HashMap;
-    use std::io::{self, Cursor};
 
-    use conduit::{Handler, Method, Request, Response};
+    use conduit::{header, Body, Handler, HttpResult, Method, RequestExt, Response};
     use conduit_middleware::MiddlewareBuilder;
     use conduit_test::MockRequest;
     use cookie::{Cookie, Key};
@@ -126,7 +119,7 @@ mod test {
 
     #[test]
     fn simple() {
-        let mut req = MockRequest::new(Method::Post, "/articles");
+        let mut req = MockRequest::new(Method::POST, "/articles");
         let key = test_key();
 
         // Set the session cookie
@@ -135,35 +128,34 @@ mod test {
         app.add(SessionMiddleware::new("lol", key, false));
         let response = app.call(&mut req).ok().unwrap();
 
-        let v = &response.headers["Set-Cookie"];
-        assert!(v[0].starts_with("lol"));
+        let v = response
+            .headers()
+            .get(header::SET_COOKIE)
+            .unwrap()
+            .to_str()
+            .unwrap();
+        assert!(v.starts_with("lol"));
 
         // Use the session cookie
-        req.header("Cookie", &v[0]);
+        req.header(header::COOKIE, v);
         let key = test_key();
         let mut app = MiddlewareBuilder::new(use_session);
         app.add(Middleware::new());
         app.add(SessionMiddleware::new("lol", key, false));
         assert!(app.call(&mut req).is_ok());
 
-        fn set_session(req: &mut dyn Request) -> io::Result<Response> {
+        fn set_session(req: &mut dyn RequestExt) -> HttpResult {
             assert!(req
                 .session()
                 .insert("foo".to_string(), "bar".to_string())
                 .is_none());
-            Ok(Response {
-                status: (200, "OK"),
-                headers: HashMap::new(),
-                body: Box::new(Cursor::new(Vec::new())),
-            })
+            let body: Body = Box::new(std::io::empty());
+            Response::builder().body(body)
         }
-        fn use_session(req: &mut dyn Request) -> io::Result<Response> {
+        fn use_session(req: &mut dyn RequestExt) -> HttpResult {
             assert_eq!(*req.session().get("foo").unwrap(), "bar");
-            Ok(Response {
-                status: (200, "OK"),
-                headers: HashMap::new(),
-                body: Box::new(Cursor::new(Vec::new())),
-            })
+            let body: Body = Box::new(std::io::empty());
+            Response::builder().body(body)
         }
     }
 
@@ -177,7 +169,7 @@ mod test {
             m.encode(&map)
         };
         assert!(!e.ends_with("="));
-        let m = m.decode(Cookie::new("foo".to_string(), e));
+        let m = m.decode(Cookie::new("foo", e));
         assert_eq!(*m.get("a").unwrap(), "bc");
     }
 }
