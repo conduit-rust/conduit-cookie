@@ -8,10 +8,9 @@ extern crate conduit_middleware;
 extern crate conduit_test;
 extern crate cookie;
 
-use conduit::{Request, Response};
+use conduit::{header, RequestExt};
+use conduit_middleware::{AfterResult, BeforeResult};
 use cookie::{Cookie, CookieJar};
-use std::collections::hash_map::Entry;
-use std::error::Error;
 
 pub use session::{RequestSession, SessionMiddleware};
 
@@ -36,12 +35,12 @@ fn parse_pair(key_value: &str) -> Option<(String, String)> {
 }
 
 impl conduit_middleware::Middleware for Middleware {
-    fn before(&self, req: &mut dyn Request) -> Result<(), Box<dyn Error + Send>> {
+    fn before(&self, req: &mut dyn RequestExt) -> BeforeResult {
         let jar = {
             let headers = req.headers();
             let mut jar = CookieJar::new();
-            if let Some(cookies) = headers.find("Cookie") {
-                for cookie in cookies.iter() {
+            for cookie in headers.get_all(header::COOKIE).iter() {
+                if let Ok(cookie) = cookie.to_str() {
                     for cookie in cookie.split(';') {
                         if let Some((key, value)) = parse_pair(cookie) {
                             jar.add_original(Cookie::new(key, value));
@@ -55,22 +54,17 @@ impl conduit_middleware::Middleware for Middleware {
         Ok(())
     }
 
-    fn after(
-        &self,
-        req: &mut dyn Request,
-        res: Result<Response, Box<dyn Error + Send>>,
-    ) -> Result<Response, Box<dyn Error + Send>> {
+    fn after(&self, req: &mut dyn RequestExt, res: AfterResult) -> AfterResult {
+        use std::convert::TryInto;
+
         let mut res = res?;
-        {
-            let jar = req.cookies();
-            let cookies = match res.headers.entry("Set-Cookie".to_string()) {
-                Entry::Occupied(e) => e.into_mut(),
-                Entry::Vacant(e) => e.insert(Vec::new()),
-            };
-            for delta in jar.delta() {
-                cookies.push(delta.to_string());
+
+        for delta in req.cookies().delta() {
+            if let Ok(value) = delta.to_string().try_into() {
+                res.headers_mut().append(header::SET_COOKIE, value);
             }
         }
+
         Ok(res)
     }
 }
@@ -80,7 +74,7 @@ pub trait RequestCookies {
     fn cookies_mut(&mut self) -> &mut CookieJar;
 }
 
-impl<T: Request + ?Sized> RequestCookies for T {
+impl<T: RequestExt + ?Sized> RequestCookies for T {
     fn cookies(&self) -> &CookieJar {
         self.extensions()
             .find::<CookieJar>()
@@ -96,10 +90,7 @@ impl<T: Request + ?Sized> RequestCookies for T {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use std::io::{self, Cursor};
-
-    use conduit::{Handler, Method, Request, Response};
+    use conduit::{header, Body, Handler, HttpResult, Method, RequestExt, Response};
     use conduit_middleware::MiddlewareBuilder;
     use conduit_test::MockRequest;
     use cookie::Cookie;
@@ -108,63 +99,62 @@ mod tests {
 
     #[test]
     fn request_headers() {
-        let mut req = MockRequest::new(Method::Post, "/articles");
-        req.header("Cookie", "foo=bar");
+        let mut req = MockRequest::new(Method::POST, "/articles");
+        req.header(header::COOKIE, "foo=bar");
 
         let mut app = MiddlewareBuilder::new(test);
         app.add(Middleware::new());
         assert!(app.call(&mut req).is_ok());
 
-        fn test(req: &mut dyn Request) -> io::Result<Response> {
+        fn test(req: &mut dyn RequestExt) -> HttpResult {
             assert!(req.cookies().get("foo").is_some());
-            Ok(Response {
-                status: (200, "OK"),
-                headers: HashMap::new(),
-                body: Box::new(Cursor::new(Vec::new())),
-            })
+            let body: Body = Box::new(std::io::empty());
+            Response::builder().body(body)
         }
     }
 
     #[test]
     fn set_cookie() {
-        let mut req = MockRequest::new(Method::Post, "/articles");
+        let mut req = MockRequest::new(Method::POST, "/articles");
         let mut app = MiddlewareBuilder::new(test);
         app.add(Middleware::new());
         let response = app.call(&mut req).ok().unwrap();
-        let v = &response.headers["Set-Cookie"];
-        assert_eq!(&v[..], ["foo=bar".to_string()]);
+        let v = &response
+            .headers()
+            .get_all(header::SET_COOKIE)
+            .iter()
+            .collect::<Vec<_>>();
+        assert_eq!(&v[..], ["foo=bar"]);
 
-        fn test(req: &mut dyn Request) -> io::Result<Response> {
+        fn test(req: &mut dyn RequestExt) -> HttpResult {
             let c = Cookie::new("foo".to_string(), "bar".to_string());
             req.cookies_mut().add(c);
-            Ok(Response {
-                status: (200, "OK"),
-                headers: HashMap::new(),
-                body: Box::new(Cursor::new(Vec::new())),
-            })
+            let body: Body = Box::new(std::io::empty());
+            Response::builder().body(body)
         }
     }
 
     #[test]
     fn cookie_list() {
-        let mut req = MockRequest::new(Method::Post, "/articles");
+        let mut req = MockRequest::new(Method::POST, "/articles");
         let mut app = MiddlewareBuilder::new(test);
         app.add(Middleware::new());
         let response = app.call(&mut req).ok().unwrap();
-        let mut v = response.headers["Set-Cookie"].clone();
+        let mut v = response
+            .headers()
+            .get_all(header::SET_COOKIE)
+            .iter()
+            .collect::<Vec<_>>();
         v.sort();
-        assert_eq!(&v[..], ["baz=qux".to_string(), "foo=bar".to_string()]);
+        assert_eq!(&v[..], ["baz=qux", "foo=bar"]);
 
-        fn test(req: &mut dyn Request) -> io::Result<Response> {
-            let c = Cookie::new("foo".to_string(), "bar".to_string());
+        fn test(req: &mut dyn RequestExt) -> HttpResult {
+            let c = Cookie::new("foo", "bar");
             req.cookies_mut().add(c);
-            let c2 = Cookie::new("baz".to_string(), "qux".to_string());
+            let c2 = Cookie::new("baz", "qux");
             req.cookies_mut().add(c2);
-            Ok(Response {
-                status: (200, "OK"),
-                headers: HashMap::new(),
-                body: Box::new(Cursor::new(Vec::new())),
-            })
+            let body: Body = Box::new(std::io::empty());
+            Response::builder().body(body)
         }
     }
 }
