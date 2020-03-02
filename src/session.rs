@@ -149,13 +149,11 @@ mod test {
                 .session()
                 .insert("foo".to_string(), "bar".to_string())
                 .is_none());
-            let body: Body = Box::new(std::io::empty());
-            Response::builder().body(body)
+            Response::builder().body(Body::empty())
         }
         fn use_session(req: &mut dyn RequestExt) -> HttpResult {
             assert_eq!(*req.session().get("foo").unwrap(), "bar");
-            let body: Body = Box::new(std::io::empty());
-            Response::builder().body(body)
+            Response::builder().body(Body::empty())
         }
     }
 

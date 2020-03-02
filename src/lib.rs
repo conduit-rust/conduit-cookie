@@ -108,8 +108,7 @@ mod tests {
 
         fn test(req: &mut dyn RequestExt) -> HttpResult {
             assert!(req.cookies().get("foo").is_some());
-            let body: Body = Box::new(std::io::empty());
-            Response::builder().body(body)
+            Response::builder().body(Body::empty())
         }
     }
 
@@ -129,8 +128,7 @@ mod tests {
         fn test(req: &mut dyn RequestExt) -> HttpResult {
             let c = Cookie::new("foo".to_string(), "bar".to_string());
             req.cookies_mut().add(c);
-            let body: Body = Box::new(std::io::empty());
-            Response::builder().body(body)
+            Response::builder().body(Body::empty())
         }
     }
 
@@ -153,8 +151,7 @@ mod tests {
             req.cookies_mut().add(c);
             let c2 = Cookie::new("baz", "qux");
             req.cookies_mut().add(c2);
-            let body: Body = Box::new(std::io::empty());
-            Response::builder().body(body)
+            Response::builder().body(Body::empty())
         }
     }
 }
