@@ -4,9 +4,11 @@ use std::str;
 
 use conduit::RequestExt;
 use conduit_middleware::{AfterResult, BeforeResult};
-use cookie::{Cookie, Key};
+use cookie::{Cookie, Key, SameSite};
 
 use super::RequestCookies;
+
+const MAX_AGE_DAYS: i64 = 90;
 
 pub struct SessionMiddleware {
     cookie_name: String,
@@ -79,6 +81,8 @@ impl conduit_middleware::Middleware for SessionMiddleware {
             Cookie::build(self.cookie_name.to_string(), encoded)
                 .http_only(true)
                 .secure(self.secure)
+                .same_site(SameSite::Strict)
+                .max_age(time::Duration::days(MAX_AGE_DAYS))
                 .path("/")
                 .finish()
         };
