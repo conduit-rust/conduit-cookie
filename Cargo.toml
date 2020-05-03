@@ -4,7 +4,7 @@ description = "Cookie and session middleware for conduit-based stacks"
 license = "MIT"
 name = "conduit-cookie"
 repository = "https://github.com/conduit-rust/conduit-cookie"
-version = "0.9.0-alpha.2"
+version = "0.9.0-alpha.3"
 
 [dependencies]
 base64 = "0.11"
@@ -13,7 +13,7 @@ conduit-middleware = "0.9.0-alpha.2"
 
 [dependencies.cookie]
 features = ["secure"]
-version = "0.12"
+version = "0.13"
 
 [dev-dependencies]
 conduit-test = "0.9.0-alpha.2"
