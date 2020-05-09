@@ -15,7 +15,8 @@ pub struct SessionMiddleware {
 }
 
 pub struct Session {
-    pub data: HashMap<String, String>,
+    data: HashMap<String, String>,
+    dirty: bool,
 }
 
 impl SessionMiddleware {
@@ -67,37 +68,50 @@ impl conduit_middleware::Middleware for SessionMiddleware {
                 .map(|cookie| self.decode(cookie))
                 .unwrap_or_else(HashMap::new)
         };
-        req.mut_extensions().insert(Session { data: session });
+        req.mut_extensions().insert(Session {
+            data: session,
+            dirty: false,
+        });
         Ok(())
     }
 
     fn after(&self, req: &mut dyn RequestExt, res: AfterResult) -> AfterResult {
-        let cookie = {
-            let session = req.mut_extensions().find::<Session>();
-            let session = session.expect("session must be present after request");
+        let session = req.extensions().find::<Session>();
+        let session = session.expect("session must be present after request");
+        if session.dirty {
             let encoded = self.encode(&session.data);
-            Cookie::build(self.cookie_name.to_string(), encoded)
+            let cookie = Cookie::build(self.cookie_name.to_string(), encoded)
                 .http_only(true)
                 .secure(self.secure)
                 .path("/")
-                .finish()
-        };
-        req.cookies_mut().signed(&self.key).add(cookie);
+                .finish();
+            req.cookies_mut().signed(&self.key).add(cookie);
+        }
         res
     }
 }
 
 pub trait RequestSession {
-    fn session(&mut self) -> &mut HashMap<String, String>;
+    fn session(&self) -> &HashMap<String, String>;
+    fn session_mut(&mut self) -> &mut HashMap<String, String>;
 }
 
 impl<T: RequestExt + ?Sized> RequestSession for T {
-    fn session(&mut self) -> &mut HashMap<String, String> {
-        &mut self
-            .mut_extensions()
-            .find_mut::<Session>()
+    fn session(&self) -> &HashMap<String, String> {
+        &self
+            .extensions()
+            .find::<Session>()
             .expect("missing cookie session")
             .data
+    }
+
+    fn session_mut(&mut self) -> &mut HashMap<String, String> {
+        let session = self
+            .mut_extensions()
+            .find_mut::<Session>()
+            .expect("missing cookie session");
+        session.dirty = true;
+        &mut session.data
     }
 }
 
@@ -126,7 +140,7 @@ mod test {
         let mut app = MiddlewareBuilder::new(set_session);
         app.add(Middleware::new());
         app.add(SessionMiddleware::new("lol", key, false));
-        let response = app.call(&mut req).ok().unwrap();
+        let response = app.call(&mut req).unwrap();
 
         let v = response
             .headers()
@@ -146,7 +160,7 @@ mod test {
 
         fn set_session(req: &mut dyn RequestExt) -> HttpResult {
             assert!(req
-                .session()
+                .session_mut()
                 .insert("foo".to_string(), "bar".to_string())
                 .is_none());
             Response::builder().body(Body::empty())
@@ -166,8 +180,36 @@ mod test {
             map.insert("a".to_string(), "bc".to_string());
             m.encode(&map)
         };
-        assert!(!e.ends_with("="));
+        assert!(!e.ends_with('='));
         let m = m.decode(Cookie::new("foo", e));
         assert_eq!(*m.get("a").unwrap(), "bc");
+    }
+
+    #[test]
+    fn dirty_tracking() {
+        let mut req = MockRequest::new(Method::GET, "/");
+
+        let mut app = MiddlewareBuilder::new(read_session);
+        app.add(Middleware::new());
+        app.add(SessionMiddleware::new("dirty", test_key(), false));
+        let response = app.call(&mut req).unwrap();
+
+        assert!(response.headers().get(header::SET_COOKIE).is_none());
+
+        let mut app = MiddlewareBuilder::new(modify_session);
+        app.add(Middleware::new());
+        app.add(SessionMiddleware::new("dirty", test_key(), false));
+        let response = app.call(&mut req).unwrap();
+
+        assert!(response.headers().get(header::SET_COOKIE).is_some());
+
+        fn read_session(req: &mut dyn RequestExt) -> HttpResult {
+            req.session();
+            Response::builder().body(Body::empty())
+        }
+        fn modify_session(req: &mut dyn RequestExt) -> HttpResult {
+            req.session_mut();
+            Response::builder().body(Body::empty())
+        }
     }
 }
