@@ -7,14 +7,14 @@ repository = "https://github.com/conduit-rust/conduit-cookie"
 version = "0.9.0-alpha.3"
 
 [dependencies]
-base64 = "0.11"
+base64 = "0.12"
 conduit = "0.9.0-alpha.2"
 conduit-middleware = "0.9.0-alpha.2"
 time = { version = "0.2", default-features = false }
 
 [dependencies.cookie]
 features = ["secure"]
-version = "0.13"
+version = "0.14"
 
 [dev-dependencies]
 conduit-test = "0.9.0-alpha.2"

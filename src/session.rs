@@ -132,7 +132,7 @@ mod test {
 
     fn test_key() -> Key {
         let master_key: Vec<u8> = (0..32).collect();
-        Key::from_master(&master_key)
+        Key::derive_from(&master_key)
     }
 
     #[test]
