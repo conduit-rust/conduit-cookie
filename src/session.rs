@@ -30,7 +30,7 @@ impl SessionMiddleware {
         }
     }
 
-    pub fn decode(&self, cookie: Cookie<'_>) -> HashMap<String, String> {
+    pub fn decode(cookie: Cookie<'_>) -> HashMap<String, String> {
         let mut ret = HashMap::new();
         let bytes = decode(cookie.value().as_bytes()).unwrap_or_default();
         let mut parts = bytes.split(|&a| a == 0xff);
@@ -45,7 +45,7 @@ impl SessionMiddleware {
         ret
     }
 
-    pub fn encode(&self, h: &HashMap<String, String>) -> String {
+    pub fn encode(h: &HashMap<String, String>) -> String {
         let mut ret = Vec::new();
         for (i, (k, v)) in h.iter().enumerate() {
             if i != 0 {
@@ -67,7 +67,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
         let session = {
             let jar = req.cookies_mut().signed(&self.key);
             jar.get(&self.cookie_name)
-                .map(|cookie| self.decode(cookie))
+                .map(|cookie| Self::decode(cookie))
                 .unwrap_or_else(HashMap::new)
         };
         req.mut_extensions().insert(Session {
@@ -81,7 +81,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
         let session = req.extensions().find::<Session>();
         let session = session.expect("session must be present after request");
         if session.dirty {
-            let encoded = self.encode(&session.data);
+            let encoded = Self::encode(&session.data);
             let cookie = Cookie::build(self.cookie_name.to_string(), encoded)
                 .http_only(true)
                 .secure(self.secure)
@@ -177,15 +177,14 @@ mod test {
 
     #[test]
     fn no_equals() {
-        let key = test_key();
-        let m = SessionMiddleware::new("test", key, false);
         let e = {
             let mut map = HashMap::new();
             map.insert("a".to_string(), "bc".to_string());
-            m.encode(&map)
+            SessionMiddleware::encode(&map)
         };
         assert!(!e.ends_with('='));
-        let m = m.decode(Cookie::new("foo", e));
+
+        let m = SessionMiddleware::decode(Cookie::new("foo", e));
         assert_eq!(*m.get("a").unwrap(), "bc");
     }
 
