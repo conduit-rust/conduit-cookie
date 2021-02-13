@@ -67,7 +67,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
         let session = {
             let jar = req.cookies_mut().signed(&self.key);
             jar.get(&self.cookie_name)
-                .map(|cookie| Self::decode(cookie))
+                .map(Self::decode)
                 .unwrap_or_else(HashMap::new)
         };
         req.mut_extensions().insert(Session {
