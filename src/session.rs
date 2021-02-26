@@ -89,7 +89,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
                 .max_age(time::Duration::days(MAX_AGE_DAYS))
                 .path("/")
                 .finish();
-            req.cookies_mut().signed(&self.key).add(cookie);
+            req.cookies_mut().signed_mut(&self.key).add(cookie);
         }
         res
     }
