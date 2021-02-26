@@ -8,7 +8,7 @@ version = "0.9.0-alpha.5"
 
 [dependencies]
 base64 = "0.13"
-conduit = "0.9.0-alpha.2"
+conduit = "0.9.0-alpha.5"
 conduit-middleware = "0.9.0-alpha.3"
 time = { version = "0.2", default-features = false }
 
