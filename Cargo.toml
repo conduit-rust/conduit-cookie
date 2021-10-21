@@ -10,7 +10,7 @@ version = "0.9.0-alpha.5"
 base64 = "0.13"
 conduit = "0.9.0-alpha.5"
 conduit-middleware = "0.9.0-alpha.4"
-time = { version = "0.2", default-features = false }
+time = { version = "0.3", default-features = false }
 
 [dependencies.cookie]
 features = ["secure"]
