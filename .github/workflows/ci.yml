@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: rustup override set stable
+      - uses: Swatinem/rust-cache@v1.3.0
+      - run: cargo check
+        env:
+          RUSTFLAGS: "-D warnings"
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: rustup override set stable
+      - uses: Swatinem/rust-cache@v1.3.0
+      - run: cargo test
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: rustup override set stable
+      - run: rustup component add rustfmt
+      - uses: Swatinem/rust-cache@v1.3.0
+      - run: cargo fmt -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: rustup override set stable
+      - run: rustup component add clippy
+      - uses: Swatinem/rust-cache@v1.3.0
+      - run: cargo clippy -- --deny warnings
