@@ -4,7 +4,7 @@ use std::str;
 
 use conduit::RequestExt;
 use conduit_middleware::{AfterResult, BeforeResult};
-use cookie::{Cookie, Key, SameSite};
+use cookie::{time::Duration, Cookie, Key, SameSite};
 
 use super::RequestCookies;
 
@@ -86,7 +86,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
                 .http_only(true)
                 .secure(self.secure)
                 .same_site(SameSite::Strict)
-                .max_age(time::Duration::days(MAX_AGE_DAYS))
+                .max_age(Duration::days(MAX_AGE_DAYS))
                 .path("/")
                 .finish();
             req.cookies_mut().signed_mut(&self.key).add(cookie);
