@@ -1,18 +1,11 @@
 #![cfg_attr(test, deny(warnings))]
 #![warn(rust_2018_idioms)]
 
-extern crate base64;
-extern crate conduit;
-extern crate conduit_middleware;
-#[cfg(test)]
-extern crate conduit_test;
-extern crate cookie;
-
 use conduit::{header, RequestExt};
 use conduit_middleware::{AfterResult, BeforeResult};
 use cookie::{Cookie, CookieJar};
 
-pub use session::{RequestSession, SessionMiddleware};
+pub use crate::session::{RequestSession, SessionMiddleware};
 
 mod session;
 

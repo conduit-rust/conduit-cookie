@@ -128,7 +128,7 @@ mod test {
     use conduit_test::MockRequest;
     use cookie::{Cookie, Key};
 
-    use {Middleware, RequestSession, SessionMiddleware};
+    use crate::{Middleware, RequestSession, SessionMiddleware};
 
     fn test_key() -> Key {
         let master_key: Vec<u8> = (0..32).collect();
