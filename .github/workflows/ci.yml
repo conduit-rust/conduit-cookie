@@ -16,9 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: |
-          rustup override set ${{ env.MSRV }}
-          rustup update ${{ env.MSRV }}
+      - run: rustup override set ${{ env.MSRV }}
       - uses: Swatinem/rust-cache@v1.3.0
       - run: cargo check
         env:
@@ -29,9 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: |
-          rustup override set ${{ env.MSRV }}
-          rustup update ${{ env.MSRV }}
+      - run: rustup override set ${{ env.MSRV }}
       - uses: Swatinem/rust-cache@v1.3.0
       - run: cargo test
 
@@ -40,9 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: |
-          rustup override set ${{ env.MSRV }}
-          rustup update ${{ env.MSRV }}
+      - run: rustup override set ${{ env.MSRV }}
       - run: rustup component add rustfmt
       - uses: Swatinem/rust-cache@v1.3.0
       - run: cargo fmt -- --check
@@ -52,9 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: |
-          rustup override set ${{ env.MSRV }}
-          rustup update ${{ env.MSRV }}
+      - run: rustup override set ${{ env.MSRV }}
       - run: rustup component add clippy
       - uses: Swatinem/rust-cache@v1.3.0
       - run: cargo clippy -- --deny warnings
