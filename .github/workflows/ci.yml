@@ -6,6 +6,10 @@ on:
       - master
   pull_request:
 
+env:
+  # minimum supported rust version
+  MSRV: 1.51.0
+
 jobs:
   check:
     name: Check
@@ -13,8 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-          rustup override set stable
-          rustup update stable
+          rustup override set ${{ env.MSRV }}
+          rustup update ${{ env.MSRV }}
       - uses: Swatinem/rust-cache@v1.3.0
       - run: cargo check
         env:
@@ -26,8 +30,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-          rustup override set stable
-          rustup update stable
+          rustup override set ${{ env.MSRV }}
+          rustup update ${{ env.MSRV }}
       - uses: Swatinem/rust-cache@v1.3.0
       - run: cargo test
 
@@ -37,8 +41,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-          rustup override set stable
-          rustup update stable
+          rustup override set ${{ env.MSRV }}
+          rustup update ${{ env.MSRV }}
       - run: rustup component add rustfmt
       - uses: Swatinem/rust-cache@v1.3.0
       - run: cargo fmt -- --check
@@ -49,8 +53,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-          rustup override set stable
-          rustup update stable
+          rustup override set ${{ env.MSRV }}
+          rustup update ${{ env.MSRV }}
       - run: rustup component add clippy
       - uses: Swatinem/rust-cache@v1.3.0
       - run: cargo clippy -- --deny warnings
