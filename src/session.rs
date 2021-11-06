@@ -78,7 +78,7 @@ impl conduit_middleware::Middleware for SessionMiddleware {
     }
 
     fn after(&self, req: &mut dyn RequestExt, res: AfterResult) -> AfterResult {
-        let session = req.extensions().find::<Session>();
+        let session = req.extensions().get::<Session>();
         let session = session.expect("session must be present after request");
         if session.dirty {
             let encoded = Self::encode(&session.data);
@@ -104,7 +104,7 @@ impl<T: RequestExt + ?Sized> RequestSession for T {
     fn session(&self) -> &HashMap<String, String> {
         &self
             .extensions()
-            .find::<Session>()
+            .get::<Session>()
             .expect("missing cookie session")
             .data
     }
@@ -112,7 +112,7 @@ impl<T: RequestExt + ?Sized> RequestSession for T {
     fn session_mut(&mut self) -> &mut HashMap<String, String> {
         let session = self
             .mut_extensions()
-            .find_mut::<Session>()
+            .get_mut::<Session>()
             .expect("missing cookie session");
         session.dirty = true;
         &mut session.data

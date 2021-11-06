@@ -70,13 +70,13 @@ pub trait RequestCookies {
 impl<T: RequestExt + ?Sized> RequestCookies for T {
     fn cookies(&self) -> &CookieJar {
         self.extensions()
-            .find::<CookieJar>()
+            .get::<CookieJar>()
             .expect("Missing cookie jar")
     }
 
     fn cookies_mut(&mut self) -> &mut CookieJar {
         self.mut_extensions()
-            .find_mut::<CookieJar>()
+            .get_mut::<CookieJar>()
             .expect("Missing cookie jar")
     }
 }
