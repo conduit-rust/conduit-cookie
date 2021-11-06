@@ -18,4 +18,4 @@ features = ["secure"]
 version = "0.16.0-rc.1"
 
 [dev-dependencies]
-conduit-test = "0.9.0-alpha.5"
+conduit-test = "0.9.0"
