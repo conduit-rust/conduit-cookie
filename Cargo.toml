@@ -10,12 +10,12 @@ rust-version = "1.51.0"
 
 [dependencies]
 base64 = "0.13"
-conduit = "0.9.0-alpha.5"
-conduit-middleware = "0.9.0-alpha.4"
+conduit = "0.9.0"
+conduit-middleware = "0.9.0"
 
 [dependencies.cookie]
 features = ["secure"]
 version = "0.16.0-rc.1"
 
 [dev-dependencies]
-conduit-test = "0.9.0-alpha.5"
+conduit-test = "0.9.0"
