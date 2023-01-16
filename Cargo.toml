@@ -15,7 +15,7 @@ conduit-middleware = "0.10.0"
 
 [dependencies.cookie]
 features = ["secure"]
-version = "0.16.0"
+version = "0.16.2"
 
 [dev-dependencies]
 conduit-test = "0.10.0"
